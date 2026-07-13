@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pemeringkatan BUMDesa — Kalimantan Barat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#132A22;
+    --forest:#1B4332;
+    --forest-deep:#0D2A1F;
+    --sage:#6E9A80;
+    --sage-pale:#E4ECE6;
+    --gold:#B8862F;
+    --gold-soft:#E9D9B8;
+    --bg:#F6F5F1;
+    --panel:#FFFFFF;
+    --line:#DDE3DB;
+    --muted:#5B6B62;
+    --maju:#1B4332;
+    --berkembang:#6E9A80;
+    --pemula:#B8862F;
+    --perintis:#C7C2B4;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;}
+  ::selection{background:var(--gold-soft);}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 24px 80px;}
+
+  header.top{
+    display:flex;justify-content:space-between;align-items:flex-end;gap:24px;
+    border-bottom:2px solid var(--forest);padding-bottom:20px;margin-bottom:28px;flex-wrap:wrap;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--gold);font-weight:500;margin-bottom:8px;
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:600;font-size:clamp(28px,4vw,42px);line-height:1.05;margin:0;
+    letter-spacing:-.01em;color:var(--forest-deep);
+  }
+  .subtitle{color:var(--muted);font-size:14.5px;margin-top:8px;max-width:520px;line-height:1.5;}
+  .meta{text-align:right;font-size:12.5px;color:var(--muted);line-height:1.6;}
+  .meta b{color:var(--forest-deep);}
+
+  /* Year tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:26px;flex-wrap:wrap;}
+  .tab{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;padding:10px 18px;border-radius:999px;
+    border:1.5px solid var(--line);background:var(--panel);cursor:pointer;color:var(--muted);
+    transition:all .15s ease;font-weight:500;
+  }
+  .tab:hover{border-color:var(--sage);color:var(--forest-deep);}
+  .tab.active{background:var(--forest);border-color:var(--forest);color:#fff;}
+
+  /* KPI row */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px;}
+  .kpi{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;
+    position:relative;overflow:hidden;
+  }
+  .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--stage-color,var(--forest));}
+  .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:6px;}
+  .kpi .value{font-family:'Fraunces',serif;font-size:30px;font-weight:600;color:var(--forest-deep);line-height:1;}
+  .kpi .delta{font-size:12px;margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+  .delta.up{color:#2C6E49;} .delta.down{color:#A8442A;} .delta.flat{color:var(--muted);}
+
+  /* Panels */
+  .grid{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;margin-bottom:18px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px 22px 14px;}
+  .panel h2{
+    font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin:0 0 4px;color:var(--forest-deep);
+  }
+  .panel .hint{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  canvas{max-width:100%;}
+
+  /* Legend / stage strip */
+  .stage-legend{display:flex;gap:14px;flex-wrap:wrap;margin:2px 0 18px;}
+  .stage-chip{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);}
+  .dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);}
+  th:first-child,td:first-child{text-align:left;}
+  th:nth-child(2),td:nth-child(2){text-align:left;}
+  th{
+    font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.05em;color:var(--muted);cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel);
+  }
+  th:hover{color:var(--forest-deep);}
+  th.sorted::after{content:' ▾';color:var(--gold);}
+  tbody tr:hover{background:var(--sage-pale);}
+  tbody tr:last-child{font-weight:600;background:#FBFAF6;}
+  td.name{font-weight:500;color:var(--forest-deep);}
+  .table-wrap{max-height:430px;overflow-y:auto;}
+
+  footer{margin-top:30px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;line-height:1.6;}
+
+  @media (max-width:900px){
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    .grid{grid-template-columns:1fr;}
+  }
+
+  /* Toolbar */
+  .toolbar{
+    position:fixed; top:18px; right:22px; z-index:500;
+    display:flex; gap:10px;
+  }
+  .tbtn{
+    display:flex; align-items:center; gap:7px;
+    font-family:'IBM Plex Sans',sans-serif; font-size:13px; font-weight:600;
+    padding:10px 16px; border-radius:999px; cursor:pointer;
+    border:1.5px solid var(--forest); background:var(--panel); color:var(--forest-deep);
+    box-shadow:0 2px 8px rgba(19,42,34,.08);
+    transition:all .15s ease;
+  }
+  .tbtn:hover{background:var(--forest); color:#fff;}
+  .tbtn.primary{background:var(--forest); color:#fff;}
+  .tbtn.primary:hover{background:var(--forest-deep); border-color:var(--forest-deep);}
+  .tbtn svg{width:15px;height:15px;flex-shrink:0;}
+  .sync-banner{
+    position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:700;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; padding:9px 18px; border-radius:999px;
+    background:var(--forest); color:#fff; box-shadow:0 3px 10px rgba(0,0,0,.18);
+    display:none; align-items:center; gap:8px; white-space:nowrap;
+  }
+  .sync-banner.show{display:flex;}
+  .sync-banner.error{background:#A8442A;}
+  #btnRefresh.spinning svg{animation:spin .8s linear infinite;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  @media print{
+    .toolbar, .sync-banner{display:none !important;}
+    body{background:#fff;}
+    .wrap{max-width:100%; padding:0 12px;}
+    header.top{margin-bottom:18px;}
+    .panel, .kpi{
+      box-shadow:none; border:1px solid var(--line);
+      break-inside:avoid; page-break-inside:avoid;
+    }
+    .grid{grid-template-columns:1fr 1fr;}
+    .table-wrap{max-height:none; overflow:visible;}
+    thead th{position:static;}
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+
+  /* ============ PRESENTATION DECK ============ */
+  .present-deck{
+    position:fixed; inset:0; z-index:9999; display:none;
+    background:radial-gradient(ellipse at top left, #163B2C 0%, var(--forest-deep) 55%);
+    color:#fff; font-family:'IBM Plex Sans',sans-serif;
+  }
+  .present-deck.active{display:block;}
+
+  .p-exit{
+    position:absolute; top:22px; right:26px; z-index:20;
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.04em;
+    padding:8px 15px; border-radius:999px; border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.06); color:rgba(255,255,255,.75); cursor:pointer;
+  }
+  .p-exit:hover{background:rgba(255,255,255,.14); color:#fff;}
+
+  .p-count{
+    position:absolute; top:26px; left:32px; z-index:20;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--gold-soft); letter-spacing:.06em;
+  }
+
+  .p-slides{position:absolute; inset:0;}
+  .p-slide{
+    position:absolute; inset:0; display:none;
+    flex-direction:column; justify-content:center; align-items:flex-start;
+    padding:9vh 8vw 12vh; opacity:0; transition:opacity .35s ease;
+  }
+  .p-slide.active{display:flex; opacity:1;}
+
+  .p-eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--gold-soft); margin-bottom:18px; font-weight:500;
+  }
+  .p-h{
+    font-family:'Fraunces',serif; font-weight:600; letter-spacing:-.01em; color:#fff;
+    font-size:clamp(34px,5.2vw,64px); line-height:1.05; margin:0 0 16px;
+  }
+  .p-sub{font-size:17px; color:rgba(255,255,255,.68); max-width:680px; line-height:1.6;}
+
+  .p-title-slide{align-items:center; text-align:center;}
+  .p-title-slide .p-h{font-size:clamp(42px,6.5vw,80px);}
+  .p-title-slide .p-meta{
+    margin-top:44px; font-size:13.5px; color:rgba(255,255,255,.55); line-height:1.8;
+  }
+  .p-title-slide .p-meta b{color:var(--gold-soft); display:block; font-size:15px; margin-top:6px;}
+
+  .p-kpi-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:20px; width:100%; margin-top:20px;}
+  .p-kpi{
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:16px;
+    padding:24px 20px; border-top:4px solid var(--stage-color,var(--gold));
+  }
+  .p-kpi .l{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.55); margin-bottom:10px; font-weight:600;}
+  .p-kpi .v{font-family:'Fraunces',serif; font-size:clamp(30px,3.4vw,46px); font-weight:600; color:#fff; line-height:1;}
+  .p-kpi .d{font-family:'IBM Plex Mono',monospace; font-size:12.5px; margin-top:8px;}
+  .p-kpi .d.up{color:#7FC79A;} .p-kpi .d.down{color:#E28B72;}
+
+  .p-insight{
+    margin-top:26px; font-size:16px; color:var(--gold-soft); font-weight:500; max-width:760px; line-height:1.6;
+    border-left:3px solid var(--gold); padding-left:16px;
+  }
+  .p-insight b{color:#fff;}
+
+  .p-chart-wrap{width:100%; height:56vh; margin-top:10px; background:rgba(255,255,255,.04); border-radius:18px; padding:24px 28px; border:1px solid rgba(255,255,255,.1);}
+
+  .p-callouts{display:grid; grid-template-columns:1fr 1fr; gap:22px; width:100%; margin-top:26px;}
+  .p-callout{
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:28px 26px;
+  }
+  .p-callout .tag{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-bottom:12px;}
+  .p-callout .name{font-family:'Fraunces',serif; font-size:26px; font-weight:600; color:#fff; margin-bottom:6px;}
+  .p-callout .num{font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:500;}
+  .p-callout .num.up{color:#7FC79A;} .p-callout .num.down{color:#E28B72;}
+  .p-callout .sub{font-size:13px; color:rgba(255,255,255,.55); margin-top:8px; line-height:1.5;}
+
+  .p-table-wrap{width:100%; margin-top:14px; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,.12);}
+  .p-table{width:100%; border-collapse:collapse; font-size:14px;}
+  .p-table th,.p-table td{padding:11px 14px; text-align:right; border-bottom:1px solid rgba(255,255,255,.08);}
+  .p-table th:first-child,.p-table td:first-child{text-align:left;}
+  .p-table th{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    color:rgba(255,255,255,.5); background:rgba(255,255,255,.04); font-weight:500;
+  }
+  .p-table td.name{text-align:left; font-weight:600; color:#fff;}
+  .p-table tr:last-child{background:rgba(255,255,255,.06); font-weight:600;}
+  .p-table tr:last-child td{color:var(--gold-soft);}
+
+  .p-controls{
+    position:absolute; bottom:28px; left:0; right:0; display:flex; align-items:center; justify-content:center;
+    gap:22px; z-index:20;
+  }
+  .p-arrow{
+    width:42px; height:42px; border-radius:50%; border:1.5px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.06); color:#fff; font-size:19px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:all .15s ease;
+  }
+  .p-arrow:hover{background:rgba(255,255,255,.18);}
+  .p-arrow:disabled{opacity:.25; cursor:default;}
+  .p-dots{display:flex; gap:8px;}
+  .p-dot{width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.25); cursor:pointer; transition:all .2s ease;}
+  .p-dot.active{background:var(--gold-soft); width:20px; border-radius:4px;}
+
+  @media (max-width:900px){
+    .p-kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .p-callouts{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="sync-banner" id="syncBanner"></div>
+
+<div class="toolbar">
+  <div class="tbtn" id="btnRefresh" title="Ambil data terbaru dari spreadsheet">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+    Refresh Data
+  </div>
+  <div class="tbtn" id="btnPresent">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg>
+    Mode Presentasi
+  </div>
+  <div class="tbtn primary" id="btnDownload">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+    Download PDF
+  </div>
+</div>
+
+<div class="present-deck" id="presentDeck">
+  <div class="p-exit" id="pExit">✕ Keluar (Esc)</div>
+  <div class="p-count" id="pCount"></div>
+  <div class="p-slides" id="pSlides"></div>
+  <div class="p-controls">
+    <div class="p-arrow" id="pPrev">‹</div>
+    <div class="p-dots" id="pDots"></div>
+    <div class="p-arrow" id="pNext">›</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="eyebrow">Dinas PMD · Provinsi Kalimantan Barat</div>
+      <h1>Pemeringkatan BUMDesa</h1>
+      <div class="subtitle">Rekapitulasi status perkembangan Badan Usaha Milik Desa di 12 kabupaten se-Kalimantan Barat, dari tahap Perintis hingga Maju.</div>
+    </div>
+    <div class="meta"><span id="lastSync">Memuat data…</span><br><b>Kepala Dinas PMD Prov. Kalbar</b><br>Hendra Bachtiar, S.T., M.T.</div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-year="y2023">Pemeringkatan 2023</div>
+    <div class="tab" data-year="y2024">Pemeringkatan 2024</div>
+    <div class="tab" data-year="y2024b">Evaluasi RPJMN 2020–2024</div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="stage-legend">
+    <div class="stage-chip"><span class="dot" style="background:var(--maju)"></span>Maju</div>
+    <div class="stage-chip"><span class="dot" style="background:var(--berkembang)"></span>Berkembang</div>
+    <div class="stage-chip"><span class="dot" style="background:var(--pemula)"></span>Pemula</div>
+    <div class="stage-chip"><span class="dot" style="background:var(--perintis)"></span>Perintis</div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Sebaran per Kabupaten/Kota</h2>
+      <div class="hint">Jumlah BUMDesa menurut tahap perkembangan, diurutkan dari total tertinggi.</div>
+      <canvas id="barChart" height="240"></canvas>
+    </div>
+    <div class="panel">
+      <h2>Komposisi Provinsi</h2>
+      <div class="hint">Proporsi tahap perkembangan se-Kalbar.</div>
+      <canvas id="donutChart" height="240"></canvas>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:18px;">
+    <h2>Tren 3 Periode</h2>
+    <div class="hint">Total BUMDesa per tahap, 2023 → 2024 → Evaluasi RPJMN.</div>
+    <canvas id="trendChart" height="90"></canvas>
+  </div>
+
+  <div class="panel">
+    <h2>Rincian per Kabupaten/Kota</h2>
+    <div class="hint">Klik judul kolom untuk mengurutkan.</div>
+    <div class="table-wrap">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th data-key="no">No</th>
+            <th data-key="name">Kabupaten/Kota</th>
+            <th data-key="maju">Maju</th>
+            <th data-key="berkembang">Berkembang</th>
+            <th data-key="pemula">Pemula</th>
+            <th data-key="perintis">Perintis</th>
+            <th data-key="jumlah" class="sorted">Jumlah</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    Sumber: Kepmendesa PDTT RI No. 7/2023, No. 177/2024, dan No. 43/2024 (Evaluasi RPJMN 2020–2024) tentang Hasil Pemeringkatan Badan Usaha Milik Desa/Bersama.
+  </footer>
+</div>
+
+<script>
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1xo99MDtyRYqtRlbJ9ZGBfGihPFHRIr8GpPaBwobY2EE/export?format=csv&gid=1162915866';
+
+let data = null;
+
+/* Parser CSV sederhana yang menghormati tanda kutip */
+function splitCSVLines(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(inQuotes){
+      if(c === '"'){
+        if(text[i+1] === '"'){ field += '"'; i++; } else { inQuotes = false; }
+      } else field += c;
+    } else {
+      if(c === '"') inQuotes = true;
+      else if(c === ','){ row.push(field); field=''; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(c === '\r'){ /* skip */ }
+      else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
+
+/* Ubah baris CSV mentah jadi struktur {y2023, y2024, y2024b} sesuai layout sheet */
+function parseSheetCSV(text){
+  const lines = splitCSVLines(text);
+  const headerIdx = lines.findIndex(r => (r[1]||'').trim().toLowerCase() === 'no');
+  if(headerIdx === -1) throw new Error('Baris header (kolom "No") tidak ditemukan di sheet');
+
+  const rows2023 = [], rows2024 = [], rows2024b = [];
+  for(let i = headerIdx+1; i < lines.length; i++){
+    const row = lines[i];
+    const name = (row[3]||'').trim();
+    if(!name || name.toLowerCase() === 'total') break;
+    const no = parseInt(row[1]) || (rows2023.length+1);
+    const kode = (row[2]||'').trim();
+    const num = v => parseInt(String(v||'0').replace(/[^\d-]/g,'')) || 0;
+    const mk = (m,b,p,r,j) => ({no, name, kode, maju:num(m), berkembang:num(b), pemula:num(p), perintis:num(r), jumlah: num(j) || (num(m)+num(b)+num(p)+num(r))});
+    rows2023.push(mk(row[4],row[5],row[6],row[7],row[8]));
+    rows2024.push(mk(row[9],row[10],row[11],row[12],row[13]));
+    rows2024b.push(mk(row[14],row[15],row[16],row[17],row[18]));
+  }
+  if(rows2023.length === 0) throw new Error('Tidak ada baris data kabupaten yang terbaca');
+
+  return {
+    y2023: {label:'2023', rows: rows2023},
+    y2024: {label:'2024', rows: rows2024},
+    y2024b: {label:'Evaluasi RPJMN', rows: rows2024b},
+  };
+}
+
+function setSyncBanner(state, text){
+  const el = document.getElementById('syncBanner');
+  el.className = 'sync-banner show' + (state==='error' ? ' error' : '');
+  el.textContent = text;
+  if(state === 'ok'){
+    setTimeout(()=>{ el.classList.remove('show'); }, 2200);
+  }
+}
+
+function updateLastSync(){
+  const el = document.getElementById('lastSync');
+  const now = new Date();
+  const str = now.toLocaleString('id-ID', {day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
+  el.textContent = `Sinkron terakhir: ${str}`;
+}
+
+async function loadSheetData(isRefresh){
+  const btnRefresh = document.getElementById('btnRefresh');
+  if(btnRefresh) btnRefresh.classList.add('spinning');
+  setSyncBanner('loading', isRefresh ? 'Menyinkronkan data terbaru…' : 'Memuat data dari Google Sheets…');
+  try{
+    const res = await fetch(SHEET_CSV_URL + '&_ts=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const parsed = parseSheetCSV(text);
+    data = parsed;
+    if(!Object.keys(data).includes(currentYear)) currentYear = 'y2023';
+    renderAll();
+    updateLastSync();
+    setSyncBanner('ok', 'Data terbaru berhasil dimuat ✓');
+  }catch(err){
+    console.error(err);
+    if(data){
+      setSyncBanner('error', 'Gagal menyinkronkan, menampilkan data sebelumnya.');
+      setTimeout(()=>{ document.getElementById('syncBanner').classList.remove('show'); }, 3000);
+    } else {
+      setSyncBanner('error', 'Gagal memuat data dari Google Sheets. Cek koneksi atau akses sheet.');
+    }
+  } finally {
+    if(btnRefresh) btnRefresh.classList.remove('spinning');
+  }
+}
+const colors = {maju:'#1B4332',berkembang:'#6E9A80',pemula:'#B8862F',perintis:'#C7C2B4'};
+let currentYear = 'y2023';
+let sortKey = 'jumlah';
+let sortDir = -1;
+let barChart, donutChart, trendChart;
+
+function totals(rows){
+  return rows.reduce((acc,r)=>{acc.maju+=r.maju;acc.berkembang+=r.berkembang;acc.pemula+=r.pemula;acc.perintis+=r.perintis;acc.jumlah+=r.jumlah;return acc;},{maju:0,berkembang:0,pemula:0,perintis:0,jumlah:0});
+}
+
+function renderKPIs(){
+  const rows = data[currentYear].rows;
+  const t = totals(rows);
+  const prevKeyMap = {y2023:null, y2024:'y2023', y2024b:'y2024'};
+  const prevKey = prevKeyMap[currentYear];
+  const prevTotal = prevKey ? totals(data[prevKey].rows) : null;
+
+  const cards = [
+    {label:'Total BUMDesa', value:t.jumlah, color:'var(--forest)', delta:prevTotal?t.jumlah-prevTotal.jumlah:null},
+    {label:'Maju', value:t.maju, color:colors.maju, delta:prevTotal?t.maju-prevTotal.maju:null},
+    {label:'Berkembang', value:t.berkembang, color:colors.berkembang, delta:prevTotal?t.berkembang-prevTotal.berkembang:null},
+    {label:'Pemula', value:t.pemula, color:colors.pemula, delta:prevTotal?t.pemula-prevTotal.pemula:null},
+    {label:'Perintis', value:t.perintis, color:colors.perintis, delta:prevTotal?t.perintis-prevTotal.perintis:null},
+  ];
+
+  document.getElementById('kpis').innerHTML = cards.map(c=>{
+    let deltaHtml = '';
+    if(c.delta !== null){
+      const cls = c.delta>0?'up':c.delta<0?'down':'flat';
+      const sign = c.delta>0?'+':'';
+      deltaHtml = `<div class="delta ${cls}">${sign}${c.delta} vs periode lalu</div>`;
+    }
+    return `<div class="kpi" style="--stage-color:${c.color}">
+      <div class="label">${c.label}</div>
+      <div class="value">${c.value}</div>
+      ${deltaHtml}
+    </div>`;
+  }).join('');
+}
+
+function renderTable(){
+  const rows = [...data[currentYear].rows].sort((a,b)=>(a[sortKey]-b[sortKey])*sortDir);
+  const t = totals(data[currentYear].rows);
+  document.getElementById('tableBody').innerHTML = rows.map(r=>`
+    <tr>
+      <td>${r.no}</td>
+      <td class="name">${r.name}</td>
+      <td>${r.maju}</td>
+      <td>${r.berkembang}</td>
+      <td>${r.pemula}</td>
+      <td>${r.perintis}</td>
+      <td>${r.jumlah}</td>
+    </tr>
+  `).join('') + `
+    <tr>
+      <td></td><td class="name">Total</td>
+      <td>${t.maju}</td><td>${t.berkembang}</td><td>${t.pemula}</td><td>${t.perintis}</td><td>${t.jumlah}</td>
+    </tr>`;
+}
+
+function renderBarChart(){
+  const rows = [...data[currentYear].rows].sort((a,b)=>b.jumlah-a.jumlah);
+  const labels = rows.map(r=>r.name);
+  const ctx = document.getElementById('barChart');
+  const datasets = ['maju','berkembang','pemula','perintis'].map(k=>({
+    label:k.charAt(0).toUpperCase()+k.slice(1),
+    data:rows.map(r=>r[k]),
+    backgroundColor:colors[k],
+    borderRadius:2,
+  }));
+  if(barChart) barChart.destroy();
+  barChart = new Chart(ctx,{
+    type:'bar',
+    data:{labels, datasets},
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{stacked:true, grid:{display:false}, ticks:{font:{size:11,family:'IBM Plex Sans'}}},
+        y:{stacked:true, grid:{color:'#EDEBE4'}, ticks:{font:{size:11}}}
+      }
+    }
+  });
+}
+
+function renderDonut(){
+  const t = totals(data[currentYear].rows);
+  const ctx = document.getElementById('donutChart');
+  if(donutChart) donutChart.destroy();
+  donutChart = new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['Maju','Berkembang','Pemula','Perintis'],
+      datasets:[{data:[t.maju,t.berkembang,t.pemula,t.perintis], backgroundColor:[colors.maju,colors.berkembang,colors.pemula,colors.perintis], borderWidth:2, borderColor:'#fff'}]
+    },
+    options:{
+      responsive:true,
+      cutout:'62%',
+      plugins:{legend:{position:'bottom', labels:{font:{size:11.5,family:'IBM Plex Sans'}, boxWidth:10, padding:14}}}
+    }
+  });
+}
+
+function renderTrend(){
+  const ctx = document.getElementById('trendChart');
+  const periods = ['y2023','y2024','y2024b'];
+  const periodLabels = ['2023','2024','Eval. RPJMN'];
+  const series = ['maju','berkembang','pemula','perintis'].map(k=>({
+    label:k.charAt(0).toUpperCase()+k.slice(1),
+    data:periods.map(p=>totals(data[p].rows)[k]),
+    borderColor:colors[k],
+    backgroundColor:colors[k],
+    tension:.35,
+    fill:false,
+    pointRadius:4,
+  }));
+  if(trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx,{
+    type:'line',
+    data:{labels:periodLabels, datasets:series},
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom', labels:{font:{size:11.5,family:'IBM Plex Sans'}, boxWidth:10, padding:14}}},
+      scales:{
+        x:{grid:{display:false}},
+        y:{grid:{color:'#EDEBE4'}}
+      }
+    }
+  });
+}
+
+function renderAll(){
+  renderKPIs();
+  renderTable();
+  renderBarChart();
+  renderDonut();
+  renderTrend();
+}
+
+document.getElementById('tabs').addEventListener('click', e=>{
+  const tab = e.target.closest('.tab');
+  if(!tab) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  currentYear = tab.dataset.year;
+  renderAll();
+});
+
+document.querySelector('thead').addEventListener('click', e=>{
+  const th = e.target.closest('th');
+  if(!th) return;
+  const key = th.dataset.key;
+  if(sortKey === key){ sortDir *= -1; } else { sortKey = key; sortDir = -1; }
+  document.querySelectorAll('th').forEach(t=>t.classList.remove('sorted'));
+  th.classList.add('sorted');
+  th.style.setProperty('--dir', sortDir);
+  renderTable();
+});
+
+document.getElementById('btnRefresh').addEventListener('click', ()=>loadSheetData(true));
+
+loadSheetData(false);
+
+/* ============ MODE PRESENTASI (slide deck) ============ */
+const periods = ['y2023','y2024','y2024b'];
+const periodLabels = {y2023:'2023', y2024:'2024', y2024b:'Evaluasi RPJMN 2020–2024'};
+const stageOrder = ['maju','berkembang','pemula','perintis'];
+const stageLabel = {maju:'Maju', berkembang:'Berkembang', pemula:'Pemula', perintis:'Perintis'};
+
+function rowsByName(periodKey){
+  const map = {};
+  data[periodKey].rows.forEach(r=>map[r.name]=r);
+  return map;
+}
+function topKabupaten(periodKey){
+  return [...data[periodKey].rows].sort((a,b)=>b.jumlah-a.jumlah)[0];
+}
+function bottomKabupaten(periodKey){
+  return [...data[periodKey].rows].sort((a,b)=>a.jumlah-b.jumlah)[0];
+}
+function biggestChange(fromKey, toKey){
+  const from = rowsByName(fromKey), to = rowsByName(toKey);
+  let best = null, worst = null;
+  Object.keys(to).forEach(name=>{
+    if(!from[name]) return;
+    const delta = to[name].jumlah - from[name].jumlah;
+    if(best===null || delta > best.delta) best = {name, delta, from:from[name].jumlah, to:to[name].jumlah};
+    if(worst===null || delta < worst.delta) worst = {name, delta, from:from[name].jumlah, to:to[name].jumlah};
+  });
+  return {best, worst};
+}
+function majuShare(periodKey){
+  const t = totals(data[periodKey].rows);
+  return ((t.maju / t.jumlah) * 100).toFixed(1);
+}
+function perintisShare(periodKey){
+  const t = totals(data[periodKey].rows);
+  return ((t.perintis / t.jumlah) * 100).toFixed(1);
+}
+
+let pCharts = {};
+let pCurrent = 0;
+let pTotal = 0;
+
+function buildSlideHTML(){
+  const latest = 'y2024b';
+  const t0 = totals(data.y2023.rows);
+  const tLatest = totals(data[latest].rows);
+  const top = topKabupaten(latest);
+  const bottom = bottomKabupaten(latest);
+  const chg = biggestChange('y2023', latest);
+  const totalDelta = tLatest.jumlah - t0.jumlah;
+
+  const slides = [];
+
+  // Slide 1 — Judul
+  slides.push(`
+    <div class="p-slide p-title-slide">
+      <div class="p-eyebrow">Dinas PMD · Provinsi Kalimantan Barat</div>
+      <div class="p-h">Pemeringkatan<br>BUMDesa Kalbar</div>
+      <div class="p-sub">Perjalanan status perkembangan Badan Usaha Milik Desa di 12 kabupaten/kota, dari Pemeringkatan 2023 hingga Evaluasi RPJMN 2020–2024.</div>
+      <div class="p-meta">Pontianak, 6 Juli 2026<b>Hendra Bachtiar, S.T., M.T. — Kepala Dinas PMD Prov. Kalbar</b></div>
+    </div>`);
+
+  // Slide 2 — Ringkasan angka terbaru
+  const cardsHtml = [
+    {k:'jumlah', label:'Total BUMDesa', color:'var(--gold)'},
+    {k:'maju', label:'Maju', color:'var(--maju)'},
+    {k:'berkembang', label:'Berkembang', color:'var(--berkembang)'},
+    {k:'pemula', label:'Pemula', color:'var(--pemula)'},
+    {k:'perintis', label:'Perintis', color:'var(--perintis)'},
+  ].map(c=>{
+    const delta = tLatest[c.k]-t0[c.k];
+    const cls = delta>0?'up':delta<0?'down':'';
+    const sign = delta>0?'+':'';
+    return `<div class="p-kpi" style="--stage-color:${c.color}">
+      <div class="l">${c.label}</div>
+      <div class="v">${tLatest[c.k]}</div>
+      <div class="d ${cls}">${sign}${delta} sejak 2023</div>
+    </div>`;
+  }).join('');
+  slides.push(`
+    <div class="p-slide">
+      <div class="p-eyebrow">Ringkasan · ${periodLabels[latest]}</div>
+      <div class="p-h">Posisi Terkini Kalimantan Barat</div>
+      <div class="p-kpi-grid">${cardsHtml}</div>
+      <div class="p-insight"><b>${top.name}</b> memimpin dengan <b>${top.jumlah} BUMDesa</b>, sementara <b>${bottom.name}</b> masih paling sedikit dengan <b>${bottom.jumlah}</b>.</div>
+    </div>`);
+
+  // Slide 3 — Sebaran per kabupaten (bar)
+  slides.push(`
+    <div class="p-slide">
+      <div class="p-eyebrow">Sebaran · ${periodLabels[latest]}</div>
+      <div class="p-h">Sebaran per Kabupaten/Kota</div>
+      <div class="p-chart-wrap"><canvas id="pBarChart"></canvas></div>
+      <div class="p-insight">Rentang total BUMDesa antar kabupaten cukup lebar: dari <b>${bottom.jumlah}</b> (${bottom.name}) hingga <b>${top.jumlah}</b> (${top.name}) — selisih <b>${top.jumlah-bottom.jumlah} unit</b>.</div>
+    </div>`);
+
+  // Slide 4 — Komposisi provinsi (donut)
+  slides.push(`
+    <div class="p-slide">
+      <div class="p-eyebrow">Komposisi · ${periodLabels[latest]}</div>
+      <div class="p-h">Komposisi Tahap Perkembangan</div>
+      <div class="p-chart-wrap" style="height:50vh"><canvas id="pDonutChart"></canvas></div>
+      <div class="p-insight">Baru <b>${majuShare(latest)}%</b> BUMDesa yang berstatus <b>Maju</b>, sementara <b>${perintisShare(latest)}%</b> masih di tahap <b>Perintis</b> — menunjukkan ruang pembinaan yang masih besar.</div>
+    </div>`);
+
+  // Slide 5 — Tren 3 periode
+  slides.push(`
+    <div class="p-slide">
+      <div class="p-eyebrow">Tren · 2023 → 2024 → Evaluasi RPJMN</div>
+      <div class="p-h">Tren 3 Periode Pemeringkatan</div>
+      <div class="p-chart-wrap"><canvas id="pTrendChart"></canvas></div>
+      <div class="p-insight">Total BUMDesa se-Kalbar ${totalDelta>=0?'bertambah':'berkurang'} <b>${Math.abs(totalDelta)} unit</b> dari 2023 (${t0.jumlah}) ke Evaluasi RPJMN (${tLatest.jumlah}).</div>
+    </div>`);
+
+  // Slide 6 — Sorotan perubahan
+  slides.push(`
+    <div class="p-slide">
+      <div class="p-eyebrow">Sorotan · 2023 vs Evaluasi RPJMN</div>
+      <div class="p-h">Kabupaten dengan Perubahan Terbesar</div>
+      <div class="p-callouts">
+        <div class="p-callout">
+          <div class="tag">Kenaikan tertinggi</div>
+          <div class="name">${chg.best.name}</div>
+          <div class="num up">+${chg.best.delta} BUMDesa</div>
+          <div class="sub">${chg.best.from} (2023) → ${chg.best.to} (Eval. RPJMN)</div>
+        </div>
+        <div class="p-callout">
+          <div class="tag">${chg.worst.delta<0?'Penurunan terbesar':'Perubahan paling kecil'}</div>
+          <div class="name">${chg.worst.name}</div>
+          <div class="num ${chg.worst.delta<0?'down':''}">${chg.worst.delta>0?'+':''}${chg.worst.delta} BUMDesa</div>
+          <div class="sub">${chg.worst.from} (2023) → ${chg.worst.to} (Eval. RPJMN)</div>
+        </div>
+      </div>
+    </div>`);
+
+  // Slide 7 — Tabel detail (top 6 kabupaten)
+  const sortedLatest = [...data[latest].rows].sort((a,b)=>b.jumlah-a.jumlah);
+  const tblRows = sortedLatest.map(r=>`
+    <tr><td class="name">${r.name}</td><td>${r.maju}</td><td>${r.berkembang}</td><td>${r.pemula}</td><td>${r.perintis}</td><td>${r.jumlah}</td></tr>
+  `).join('') + `<tr><td class="name">Total</td><td>${tLatest.maju}</td><td>${tLatest.berkembang}</td><td>${tLatest.pemula}</td><td>${tLatest.perintis}</td><td>${tLatest.jumlah}</td></tr>`;
+  slides.push(`
+    <div class="p-slide">
+      <div class="p-eyebrow">Rincian · ${periodLabels[latest]}</div>
+      <div class="p-h">Detail per Kabupaten/Kota</div>
+      <div class="p-table-wrap">
+        <table class="p-table">
+          <thead><tr><th>Kabupaten/Kota</th><th>Maju</th><th>Berkembang</th><th>Pemula</th><th>Perintis</th><th>Jumlah</th></tr></thead>
+          <tbody>${tblRows}</tbody>
+        </table>
+      </div>
+    </div>`);
+
+  // Slide 8 — Penutup
+  slides.push(`
+    <div class="p-slide p-title-slide">
+      <div class="p-eyebrow">Terima Kasih</div>
+      <div class="p-h">Bersama Membangun<br>BUMDesa Kalbar</div>
+      <div class="p-sub">Sumber: Kepmendesa PDTT RI No. 7/2023, No. 177/2024, dan No. 43/2024 (Evaluasi RPJMN 2020–2024) tentang Hasil Pemeringkatan Badan Usaha Milik Desa/Bersama.</div>
+      <div class="p-meta">Dinas Pemberdayaan Masyarakat dan Desa<b>Provinsi Kalimantan Barat</b></div>
+    </div>`);
+
+  return slides;
+}
+
+function initChartForSlide(index){
+  const latest = 'y2024b';
+  if(index === 2 && !pCharts.bar){
+    const rows = [...data[latest].rows].sort((a,b)=>b.jumlah-a.jumlah);
+    pCharts.bar = new Chart(document.getElementById('pBarChart'), {
+      type:'bar',
+      data:{
+        labels: rows.map(r=>r.name),
+        datasets: stageOrder.map(k=>({label:stageLabel[k], data:rows.map(r=>r[k]), backgroundColor:colors[k], borderRadius:2}))
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#fff', font:{size:12}}}},
+        scales:{
+          x:{stacked:true, grid:{display:false}, ticks:{color:'rgba(255,255,255,.7)', font:{size:11}}},
+          y:{stacked:true, grid:{color:'rgba(255,255,255,.08)'}, ticks:{color:'rgba(255,255,255,.7)'}}
+        }
+      }
+    });
+  }
+  if(index === 3 && !pCharts.donut){
+    const t = totals(data[latest].rows);
+    pCharts.donut = new Chart(document.getElementById('pDonutChart'), {
+      type:'doughnut',
+      data:{
+        labels:['Maju','Berkembang','Pemula','Perintis'],
+        datasets:[{data:[t.maju,t.berkembang,t.pemula,t.perintis], backgroundColor:[colors.maju,colors.berkembang,colors.pemula,colors.perintis], borderWidth:3, borderColor:'#0D2A1F'}]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, cutout:'62%',
+        plugins:{legend:{position:'bottom', labels:{color:'#fff', font:{size:13}, boxWidth:12, padding:16}}}
+      }
+    });
+  }
+  if(index === 4 && !pCharts.trend){
+    pCharts.trend = new Chart(document.getElementById('pTrendChart'), {
+      type:'line',
+      data:{
+        labels: periods.map(p=>periodLabels[p]),
+        datasets: stageOrder.map(k=>({
+          label:stageLabel[k], data:periods.map(p=>totals(data[p].rows)[k]),
+          borderColor:colors[k], backgroundColor:colors[k], tension:.35, fill:false, pointRadius:5, borderWidth:2.5
+        }))
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom', labels:{color:'#fff', font:{size:13}, boxWidth:12, padding:16}}},
+        scales:{
+          x:{grid:{display:false}, ticks:{color:'rgba(255,255,255,.7)'}},
+          y:{grid:{color:'rgba(255,255,255,.08)'}, ticks:{color:'rgba(255,255,255,.7)'}}
+        }
+      }
+    });
+  }
+}
+
+function goToSlide(i){
+  const slideEls = document.querySelectorAll('.p-slide');
+  const dotEls = document.querySelectorAll('.p-dot');
+  if(i<0 || i>=pTotal) return;
+  pCurrent = i;
+  slideEls.forEach((s,idx)=>s.classList.toggle('active', idx===i));
+  dotEls.forEach((d,idx)=>d.classList.toggle('active', idx===i));
+  document.getElementById('pCount').textContent = `${i+1} / ${pTotal}`;
+  document.getElementById('pPrev').style.visibility = i===0 ? 'hidden':'visible';
+  document.getElementById('pNext').style.visibility = i===pTotal-1 ? 'hidden':'visible';
+  requestAnimationFrame(()=>initChartForSlide(i));
+}
+
+function buildPresentation(){
+  const slides = buildSlideHTML();
+  pTotal = slides.length;
+  pCharts = {};
+  document.getElementById('pSlides').innerHTML = slides.join('');
+  document.getElementById('pDots').innerHTML = slides.map((_,i)=>`<div class="p-dot" data-i="${i}"></div>`).join('');
+  goToSlide(0);
+}
+
+function enterPresentation(){
+  if(!data){ alert('Data belum selesai dimuat dari spreadsheet. Coba lagi sesaat lagi.'); return; }
+  buildPresentation();
+  const deck = document.getElementById('presentDeck');
+  deck.classList.add('active');
+  if(deck.requestFullscreen){ deck.requestFullscreen().catch(()=>{}); }
+}
+function exitPresentation(){
+  document.getElementById('presentDeck').classList.remove('active');
+  if(document.fullscreenElement && document.exitFullscreen){
+    document.exitFullscreen().catch(()=>{});
+  }
+}
+
+document.getElementById('btnPresent').addEventListener('click', enterPresentation);
+document.getElementById('pExit').addEventListener('click', exitPresentation);
+document.getElementById('pPrev').addEventListener('click', ()=>goToSlide(pCurrent-1));
+document.getElementById('pNext').addEventListener('click', ()=>goToSlide(pCurrent+1));
+document.getElementById('pDots').addEventListener('click', e=>{
+  const dot = e.target.closest('.p-dot');
+  if(dot) goToSlide(+dot.dataset.i);
+});
+document.addEventListener('keydown', e=>{
+  if(!document.getElementById('presentDeck').classList.contains('active')) return;
+  if(e.key === 'Escape') exitPresentation();
+  if(e.key === 'ArrowRight') goToSlide(pCurrent+1);
+  if(e.key === 'ArrowLeft') goToSlide(pCurrent-1);
+});
+document.addEventListener('fullscreenchange', ()=>{
+  if(!document.fullscreenElement) document.getElementById('presentDeck').classList.remove('active');
+});
+
+/* --- Download PDF --- */
+document.getElementById('btnDownload').addEventListener('click', ()=>{
+  window.print();
+});
+</script>
+</body>
+</html>
