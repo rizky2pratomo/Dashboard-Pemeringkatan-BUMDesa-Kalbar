@@ -388,21 +388,34 @@ function splitCSVLines(text){
 /* Ubah baris CSV mentah jadi struktur {y2023, y2024, y2024b} sesuai layout sheet */
 function parseSheetCSV(text){
   const lines = splitCSVLines(text);
-  const headerIdx = lines.findIndex(r => (r[1]||'').trim().toLowerCase() === 'no');
+
+  // Cari baris header dengan mencari sel bertuliskan "No" di mana pun posisinya,
+  // lalu tentukan kolom lain relatif terhadapnya (tahan terhadap kolom kosong yang terpotong).
+  let headerIdx = -1, noCol = -1;
+  for(let i=0; i<lines.length; i++){
+    const idx = lines[i].findIndex(c => (c||'').trim().toLowerCase() === 'no');
+    if(idx !== -1){ headerIdx = i; noCol = idx; break; }
+  }
   if(headerIdx === -1) throw new Error('Baris header (kolom "No") tidak ditemukan di sheet');
+
+  const kodeCol = noCol + 1;   // Kode Kab
+  const nameCol = noCol + 2;   // Kabupaten
+  const base2023 = nameCol + 1; // Maju 2023 (Berkembang,Pemula,Perintis,Jumlah mengikuti)
+  const base2024 = base2023 + 5;
+  const baseEval = base2024 + 5;
 
   const rows2023 = [], rows2024 = [], rows2024b = [];
   for(let i = headerIdx+1; i < lines.length; i++){
     const row = lines[i];
-    const name = (row[3]||'').trim();
+    const name = (row[nameCol]||'').trim();
     if(!name || name.toLowerCase() === 'total') break;
-    const no = parseInt(row[1]) || (rows2023.length+1);
-    const kode = (row[2]||'').trim();
+    const no = parseInt(row[noCol]) || (rows2023.length+1);
+    const kode = (row[kodeCol]||'').trim();
     const num = v => parseInt(String(v||'0').replace(/[^\d-]/g,'')) || 0;
     const mk = (m,b,p,r,j) => ({no, name, kode, maju:num(m), berkembang:num(b), pemula:num(p), perintis:num(r), jumlah: num(j) || (num(m)+num(b)+num(p)+num(r))});
-    rows2023.push(mk(row[4],row[5],row[6],row[7],row[8]));
-    rows2024.push(mk(row[9],row[10],row[11],row[12],row[13]));
-    rows2024b.push(mk(row[14],row[15],row[16],row[17],row[18]));
+    rows2023.push(mk(row[base2023],row[base2023+1],row[base2023+2],row[base2023+3],row[base2023+4]));
+    rows2024.push(mk(row[base2024],row[base2024+1],row[base2024+2],row[base2024+3],row[base2024+4]));
+    rows2024b.push(mk(row[baseEval],row[baseEval+1],row[baseEval+2],row[baseEval+3],row[baseEval+4]));
   }
   if(rows2023.length === 0) throw new Error('Tidak ada baris data kabupaten yang terbaca');
 
