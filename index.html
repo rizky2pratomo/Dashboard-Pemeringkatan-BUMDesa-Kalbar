@@ -359,7 +359,7 @@
 </div>
 
 <script>
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1xo99MDtyRYqtRlbJ9ZGBfGihPFHRIr8GpPaBwobY2EE/export?format=csv&gid=1162915866';
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1xo99MDtyRYqtRlbJ9ZGBfGihPFHRIr8GpPaBwobY2EE/gviz/tq?tqx=out:csv&gid=1162915866';
 
 let data = null;
 
@@ -445,11 +445,12 @@ async function loadSheetData(isRefresh){
     setSyncBanner('ok', 'Data terbaru berhasil dimuat ✓');
   }catch(err){
     console.error(err);
+    const msg = (err && err.message) ? err.message : 'kesalahan tidak diketahui';
     if(data){
-      setSyncBanner('error', 'Gagal menyinkronkan, menampilkan data sebelumnya.');
-      setTimeout(()=>{ document.getElementById('syncBanner').classList.remove('show'); }, 3000);
+      setSyncBanner('error', `Gagal menyinkronkan (${msg}), menampilkan data sebelumnya.`);
+      setTimeout(()=>{ document.getElementById('syncBanner').classList.remove('show'); }, 4000);
     } else {
-      setSyncBanner('error', 'Gagal memuat data dari Google Sheets. Cek koneksi atau akses sheet.');
+      setSyncBanner('error', `Gagal memuat data: ${msg}`);
     }
   } finally {
     if(btnRefresh) btnRefresh.classList.remove('spinning');
