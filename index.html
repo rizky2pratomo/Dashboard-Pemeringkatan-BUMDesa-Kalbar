@@ -393,7 +393,7 @@ function parseSheetCSV(text){
   // lalu tentukan kolom lain relatif terhadapnya (tahan terhadap kolom kosong yang terpotong).
   let headerIdx = -1, noCol = -1;
   for(let i=0; i<lines.length; i++){
-    const idx = lines[i].findIndex(c => (c||'').trim().toLowerCase() === 'no');
+    const idx = lines[i].findIndex(c => (c||'').replace(/\uFEFF/g,'').trim().toLowerCase() === 'no');
     if(idx !== -1){ headerIdx = i; noCol = idx; break; }
   }
   if(headerIdx === -1) throw new Error('Baris header (kolom "No") tidak ditemukan di sheet');
@@ -407,8 +407,9 @@ function parseSheetCSV(text){
   const rows2023 = [], rows2024 = [], rows2024b = [];
   for(let i = headerIdx+1; i < lines.length; i++){
     const row = lines[i];
+    const noRaw = (row[noCol]||'').trim();
     const name = (row[nameCol]||'').trim();
-    if(!name || name.toLowerCase() === 'total') break;
+    if(!noRaw || !name || name.toLowerCase() === 'total') break;
     const no = parseInt(row[noCol]) || (rows2023.length+1);
     const kode = (row[kodeCol]||'').trim();
     const num = v => parseInt(String(v||'0').replace(/[^\d-]/g,'')) || 0;
@@ -449,7 +450,8 @@ async function loadSheetData(isRefresh){
   try{
     const res = await fetch(SHEET_CSV_URL + '&_ts=' + Date.now(), {cache:'no-store'});
     if(!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
+    let text = await res.text();
+    text = text.replace(/^\uFEFF/, ''); // buang BOM yang disisipkan Google di awal file
     const parsed = parseSheetCSV(text);
     data = parsed;
     if(!Object.keys(data).includes(currentYear)) currentYear = 'y2023';
